@@ -1,11 +1,16 @@
-name: 'Your name here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'Trigger Deploy'
+description: 'Can either trigger a deployment to a specific environment / namespace, or trigger a number of deployments based on the event which triggered it.'
+author: 'switcher.ie'
 inputs:
-  milliseconds: # change this
-    required: true
-    description: 'input description here'
-    default: 'default value if applicable'
+  environment:
+    description: 'The environment to deploy to. Either "staging" or "production".'
+  namespace:
+    description: 'The namespace to deploy to. Only valid if `environment` is "staging".'
+  ref:
+    description: 'The commit reference to deploy.'
+outputs:
+  deployments:
+    description: 'JSON-encoded array of GitHub deployments'
 runs:
   using: 'node12'
   main: 'dist/index.js'
