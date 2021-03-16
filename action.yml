@@ -2,6 +2,8 @@ name: 'Trigger Deploy'
 description: 'Can either trigger a deployment to a specific environment / namespace, or trigger a number of deployments based on the event which triggered it.'
 author: 'switcher.ie'
 inputs:
+  app:
+    description: 'The application to deploy; the repository slug.'
   environment:
     description: 'The environment to deploy to. Either "staging" or "production".'
   namespace:
