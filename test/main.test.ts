@@ -7,7 +7,9 @@ test('test runs', () => {
   const np = process.execPath
   const ip = path.join(__dirname, '..', 'dist', 'index.js')
   const options: cp.ExecFileSyncOptions = {
-    env: process.env
+    env: Object.assign(process.env, {
+      INPUT_GITHUB_ACCESS_TOKEN: '0000000000000000000000000000000000000000'
+    })
   }
   console.log(cp.execFileSync(np, [ip], options).toString())
 })
