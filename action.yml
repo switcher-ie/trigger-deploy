@@ -10,6 +10,9 @@ inputs:
     description: 'The namespace to deploy to. Only valid if `environment` is "staging".'
   ref:
     description: 'The commit reference to deploy.'
+  github_access_token:
+    description: 'A GitHub Personal Access Token with `repo`'
+    required: true
 outputs:
   deployment:
     description: 'first deployment as JSON-encoded object'

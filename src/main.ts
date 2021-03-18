@@ -14,7 +14,7 @@ async function triggerDeployment(): Promise<Deployment[]> {
   const namespace = core.getInput('NAMESPACE')
   const ref = core.getInput('REF')
 
-  const token = core.getInput('GITHUB_TOKEN')
+  const token = core.getInput('GITHUB_ACCESS_TOKEN')
   const client = github.getOctokit(token)
 
   if (app === '' && environment === '' && namespace === '' && ref === '') {
