@@ -12,6 +12,12 @@ test('instantiates with staging environment & namespace', () => {
   expect(environment.namespace).toEqual('magenta')
 })
 
+test('instantiates from label name', () => {
+  const environment = DeploymentEnvironment.fromLabelName('staging/magenta')
+  expect(environment.environment).toEqual('staging')
+  expect(environment.namespace).toEqual('magenta')
+})
+
 test('throws error with blank environment', () => {
   expect(() => {
     new DeploymentEnvironment('', '')

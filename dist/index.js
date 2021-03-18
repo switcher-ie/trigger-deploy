@@ -24,6 +24,10 @@ class DeploymentEnvironment {
             this.namespace = namespace;
         }
     }
+    static fromLabelName(labelName) {
+        const [environment, namespace] = labelName.split('/');
+        return new DeploymentEnvironment(environment, namespace);
+    }
     toString() {
         if (this.environment === Environment_1.Environment.Production) {
             return this.environment;
@@ -91,6 +95,44 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__webpack_require__(186));
 const github = __importStar(__webpack_require__(438));
 const DeploymentEnvironment_1 = __webpack_require__(244);
+const Environment_1 = __webpack_require__(934);
+function createDeployment(client, app, environment, ref) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const response = yield client.repos.createDeployment({
+            owner: 'switcher-ie',
+            repo: app,
+            ref,
+            task: 'deploy',
+            auto_merge: false,
+            environment: environment.toString()
+        });
+        return response.data;
+    });
+}
+function triggerDeploymentsFromPushEvent(client, event) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (event.ref !== 'refs/heads/master') {
+            return [];
+        }
+        const app = event.repository.name;
+        const environment = new DeploymentEnvironment_1.DeploymentEnvironment(Environment_1.Environment.Production, '');
+        const ref = event.after;
+        const deployment = yield createDeployment(client, app, environment, ref);
+        return [deployment];
+    });
+}
+function triggerDeploymentsFromPullRequestEvent(client, event) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const app = event.repository.name;
+        const labelNames = event.pull_request.labels.map(label => label.name);
+        const stagingEnvironmentNames = (name) => name.startsWith(`${Environment_1.Environment.Staging}/`);
+        const deployments = labelNames.filter(stagingEnvironmentNames).map((labelName) => __awaiter(this, void 0, void 0, function* () {
+            const environment = DeploymentEnvironment_1.DeploymentEnvironment.fromLabelName(labelName);
+            return createDeployment(client, app, environment, event.pull_request.head.sha);
+        }));
+        return Promise.all(deployments);
+    });
+}
 function triggerDeployment() {
     return __awaiter(this, void 0, void 0, function* () {
         const app = core.getInput('APP');
@@ -109,31 +151,25 @@ function triggerDeployment() {
             //     label which doesn't have an open PR assigned.
             //   - if PR event: check PR for labels, create staging deployment for each match label.
             //   - else: fail step
-            return [];
+            let event;
+            switch (github.context.eventName) {
+                case 'push':
+                    event = github.context.payload;
+                    return yield triggerDeploymentsFromPushEvent(client, event);
+                case 'pull_request':
+                    event = github.context.payload;
+                    return yield triggerDeploymentsFromPullRequestEvent(client, event);
+                default:
+                    core.setFailed(`executed with unsupported event: ${github.context.eventName}`);
+                    return [];
+            }
         }
         else {
             // Create a deployment based on the arguments
             const deploymentEnviroment = new DeploymentEnvironment_1.DeploymentEnvironment(environment, namespace);
             core.info(`deployment environment: ${deploymentEnviroment.toString()}`);
-            const response = yield client.repos.createDeployment({
-                owner: 'switcher-ie',
-                repo: app,
-                ref,
-                task: 'deploy',
-                auto_merge: false,
-                environment: deploymentEnviroment.toString(),
-                required_contexts: [],
-            });
-            core.info(response.status.toString());
-            const deployment = response.data;
-            if (deployment) {
-                core.info(typeof deployment);
-                return [deployment];
-            }
-            else {
-                core.setFailed('deployment not created');
-                return [];
-            }
+            const deployment = yield createDeployment(client, app, deploymentEnviroment, ref);
+            return [deployment];
         }
     });
 }

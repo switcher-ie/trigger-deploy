@@ -4,6 +4,11 @@ export class DeploymentEnvironment {
   environment: string
   namespace?: string
 
+  static fromLabelName(labelName: string): DeploymentEnvironment {
+    const [environment, namespace] = labelName.split('/')
+    return new DeploymentEnvironment(environment, namespace)
+  }
+
   constructor(environment: string, namespace: string) {
     if (
       environment !== Environment.Staging &&
