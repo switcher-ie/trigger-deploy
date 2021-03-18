@@ -104,7 +104,8 @@ function createDeployment(client, app, environment, ref) {
             ref,
             task: 'deploy',
             auto_merge: false,
-            environment: environment.toString()
+            environment: environment.toString(),
+            required_contexts: [],
         });
         return response.data;
     });
