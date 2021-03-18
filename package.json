@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "description": "Can either trigger a deployment to a specific environment / namespace, or trigger a number of deployments based on the event which triggered it.",
-  "main": "dist/index.js",
+  "main": "lib/main.js",
   "scripts": {
     "build": "tsc",
     "format": "prettier --write **/*.ts",
