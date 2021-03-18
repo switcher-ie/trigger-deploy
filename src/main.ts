@@ -45,7 +45,8 @@ async function triggerDeployment(): Promise<Deployment[]> {
       ref,
       task: 'deploy',
       auto_merge: false,
-      environment: deploymentEnviroment.toString()
+      environment: deploymentEnviroment.toString(),
+      required_contexts: []
     })
 
     core.info(response.status.toString())
