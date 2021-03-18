@@ -1,4 +1,4 @@
-import {DeploymentEnvironment} from '../src/Deploymentenvironment'
+import {DeploymentEnvironment} from '../src/DeploymentEnvironment'
 
 test('instantiates with production environment', () => {
   const environment = new DeploymentEnvironment('production', '')
