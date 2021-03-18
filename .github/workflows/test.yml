@@ -20,3 +20,5 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: ./
+        with:
+          github_access_token: '0000000000000000000000000000000000000000'
