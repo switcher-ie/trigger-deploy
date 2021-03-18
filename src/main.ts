@@ -17,6 +17,11 @@ async function triggerDeployment(): Promise<Deployment[]> {
   const token = core.getInput('GITHUB_ACCESS_TOKEN')
   const client = github.getOctokit(token)
 
+  core.info(`APP: ${app}`)
+  core.info(`ENVIRONMENT: ${environment}`)
+  core.info(`NAMESPACE: ${namespace}`)
+  core.info(`REF: ${ref}`)
+
   if (app === '' && environment === '' && namespace === '' && ref === '') {
     // Guess deployment based on event
     //   - if push event: on master, create single production deployment; create staging deployment for each
@@ -31,6 +36,8 @@ async function triggerDeployment(): Promise<Deployment[]> {
       environment,
       namespace
     )
+
+    core.info(`deployment environment: ${deploymentEnviroment.toString()}`)
 
     const response = await client.repos.createDeployment({
       owner: 'switcher-ie',
@@ -56,6 +63,7 @@ async function triggerDeployment(): Promise<Deployment[]> {
 
 async function run(): Promise<void> {
   try {
+    core.info('running...')
     const deployments = await triggerDeployment()
     core.setOutput('DEPLOYMENTS', JSON.stringify(deployments))
     core.setOutput('DEPLOYMENT', JSON.stringify(deployments[0]))
