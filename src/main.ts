@@ -32,7 +32,7 @@ async function triggerDeployment(): Promise<Deployment[]> {
       namespace
     )
 
-    const response = client.repos.createDeployment({
+    const response = await client.repos.createDeployment({
       owner: 'switcher-ie',
       repo: app,
       ref,
@@ -41,8 +41,16 @@ async function triggerDeployment(): Promise<Deployment[]> {
       environment: deploymentEnviroment.toString()
     })
 
-    const deployment = (await response).data
-    return [deployment]
+    core.info(response.status.toString())
+
+    const deployment = response.data
+    if (deployment) {
+      core.info(typeof deployment)
+      return [deployment]
+    } else {
+      core.setFailed('deployment not created')
+      return []
+    }
   }
 }
 
