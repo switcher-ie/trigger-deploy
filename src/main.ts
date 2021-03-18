@@ -50,6 +50,7 @@ async function run(): Promise<void> {
   try {
     const deployments = await triggerDeployment()
     core.setOutput('DEPLOYMENTS', JSON.stringify(deployments))
+    core.setOutput('DEPLOYMENT', JSON.stringify(deployments[0]))
   } catch (error) {
     core.setFailed(error.message)
   }
