@@ -97,8 +97,8 @@ const github = __importStar(__webpack_require__(438));
 const DeploymentEnvironment_1 = __webpack_require__(244);
 const Environment_1 = __webpack_require__(934);
 const ORGANISATION = 'switcher-ie';
-function extractEvent(context) {
-    return context.payload;
+function extractEvent(eventName, payload) {
+    return payload;
 }
 function createDeployment(client, app, environment, sha) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -197,9 +197,9 @@ function triggerDeployment() {
             //   - else: fail step
             switch (github.context.eventName) {
                 case 'push':
-                    return yield triggerDeploymentsFromPushEvent(client, extractEvent(github.context));
+                    return yield triggerDeploymentsFromPushEvent(client, extractEvent(github.context.eventName, github.context.payload));
                 case 'pull_request':
-                    return yield triggerDeploymentsFromPullRequestEvent(client, extractEvent(github.context));
+                    return yield triggerDeploymentsFromPullRequestEvent(client, extractEvent(github.context.eventName, github.context.payload));
                 default:
                     throw new Error(`executed with unsupported event: ${github.context.eventName}`);
             }

@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import {Context} from '@actions/github/lib/context'
+import {WebhookPayload} from '@actions/github/lib/interfaces'
 import {DeploymentEnvironment} from './DeploymentEnvironment'
 import {Environment} from './Environment'
 import {Octokit} from '@octokit/core'
@@ -21,9 +21,9 @@ const ORGANISATION = 'switcher-ie'
 
 function extractEvent<
   EventName extends keyof EventPayloadMap,
-  Payload extends EventPayloadMap[EventName]
->(context: Context): Payload {
-  return context.payload as Payload
+  Event extends EventPayloadMap[EventName]
+>(eventName: EventName, payload: WebhookPayload): Event {
+  return payload as Event
 }
 
 async function createDeployment(
@@ -168,16 +168,17 @@ async function triggerDeployment(): Promise<Deployment[]> {
     //     label which doesn't have an open PR assigned.
     //   - if PR event: check PR for labels, create staging deployment for each match label.
     //   - else: fail step
+
     switch (github.context.eventName) {
       case 'push':
         return await triggerDeploymentsFromPushEvent(
           client,
-          extractEvent(github.context)
+          extractEvent(github.context.eventName, github.context.payload)
         )
       case 'pull_request':
         return await triggerDeploymentsFromPullRequestEvent(
           client,
-          extractEvent(github.context)
+          extractEvent(github.context.eventName, github.context.payload)
         )
       default:
         throw new Error(
