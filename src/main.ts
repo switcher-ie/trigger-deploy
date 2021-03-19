@@ -30,14 +30,14 @@ async function createDeployment(
   client: Octokit,
   app: string,
   environment: DeploymentEnvironment,
-  ref: string
+  sha: string
 ): Promise<Deployment> {
-  core.info(`Triggered Build: ${app} ${environment} @ ${ref}`)
+  core.info(`Triggered Build: ${app} ${environment} @ ${sha}`)
 
   const response = await client.repos.createDeployment({
     owner: ORGANISATION,
     repo: app,
-    ref,
+    ref: sha,
     task: 'deploy',
     auto_merge: false,
     environment: environment.toString(),
@@ -101,13 +101,13 @@ async function triggerDeploymentsFromPushEvent(
   }
 
   const app = event.repository.name
-  const ref = event.after
+  const sha = event.after
 
   const productionDeployment = await createDeployment(
     client,
     app,
     new DeploymentEnvironment(Environment.Production, ''),
-    ref
+    sha
   )
 
   const reserved = await reservedDeploymentEnvironments(client, app)
@@ -117,7 +117,7 @@ async function triggerDeploymentsFromPushEvent(
 
   const stagingDeployments = needsMasterUpdate.map(
     async (deploymentEnvironment): Promise<Deployment> => {
-      return createDeployment(client, app, deploymentEnvironment, ref)
+      return createDeployment(client, app, deploymentEnvironment, sha)
     }
   )
 
@@ -152,7 +152,7 @@ async function triggerDeployment(): Promise<Deployment[]> {
   const app = core.getInput('APP')
   const environment = core.getInput('ENVIRONMENT')
   const namespace = core.getInput('NAMESPACE')
-  const ref = core.getInput('REF')
+  const sha = core.getInput('SHA')
 
   const token = core.getInput('GITHUB_ACCESS_TOKEN')
   const client = github.getOctokit(token)
@@ -160,9 +160,9 @@ async function triggerDeployment(): Promise<Deployment[]> {
   core.info(`APP: ${app}`)
   core.info(`ENVIRONMENT: ${environment}`)
   core.info(`NAMESPACE: ${namespace}`)
-  core.info(`REF: ${ref}`)
+  core.info(`sha: ${sha}`)
 
-  if (app === '' && environment === '' && namespace === '' && ref === '') {
+  if (app === '' && environment === '' && namespace === '' && sha === '') {
     // Guess deployment based on event
     //   - if push event: on master, create single production deployment; create staging deployment for each
     //     label which doesn't have an open PR assigned.
@@ -195,7 +195,7 @@ async function triggerDeployment(): Promise<Deployment[]> {
       client,
       app,
       deploymentEnviroment,
-      ref
+      sha
     )
     return [deployment]
   }

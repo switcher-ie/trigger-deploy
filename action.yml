@@ -8,8 +8,8 @@ inputs:
     description: 'The environment to deploy to. Either "staging" or "production".'
   namespace:
     description: 'The namespace to deploy to. Only valid if `environment` is "staging".'
-  ref:
-    description: 'The commit reference to deploy.'
+  sha:
+    description: 'The commit SHA to deploy.'
   github_access_token:
     description: 'A GitHub Personal Access Token with `repo`'
     required: true

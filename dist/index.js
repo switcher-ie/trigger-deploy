@@ -100,13 +100,13 @@ const ORGANISATION = 'switcher-ie';
 function extractEvent(context) {
     return context.payload;
 }
-function createDeployment(client, app, environment, ref) {
+function createDeployment(client, app, environment, sha) {
     return __awaiter(this, void 0, void 0, function* () {
-        core.info(`Triggered Build: ${app} ${environment} @ ${ref}`);
+        core.info(`Triggered Build: ${app} ${environment} @ ${sha}`);
         const response = yield client.repos.createDeployment({
             owner: ORGANISATION,
             repo: app,
-            ref,
+            ref: sha,
             task: 'deploy',
             auto_merge: false,
             environment: environment.toString(),
@@ -154,14 +154,14 @@ function triggerDeploymentsFromPushEvent(client, event) {
             return [];
         }
         const app = event.repository.name;
-        const ref = event.after;
-        const productionDeployment = yield createDeployment(client, app, new DeploymentEnvironment_1.DeploymentEnvironment(Environment_1.Environment.Production, ''), ref);
+        const sha = event.after;
+        const productionDeployment = yield createDeployment(client, app, new DeploymentEnvironment_1.DeploymentEnvironment(Environment_1.Environment.Production, ''), sha);
         const reserved = yield reservedDeploymentEnvironments(client, app);
         const needsMasterUpdate = [
             ...(yield configuredDeploymentEnvironments(client, app))
         ].filter(environment => !reserved.has(environment));
         const stagingDeployments = needsMasterUpdate.map((deploymentEnvironment) => __awaiter(this, void 0, void 0, function* () {
-            return createDeployment(client, app, deploymentEnvironment, ref);
+            return createDeployment(client, app, deploymentEnvironment, sha);
         }));
         return [productionDeployment].concat(yield Promise.all(stagingDeployments));
     });
@@ -182,14 +182,14 @@ function triggerDeployment() {
         const app = core.getInput('APP');
         const environment = core.getInput('ENVIRONMENT');
         const namespace = core.getInput('NAMESPACE');
-        const ref = core.getInput('REF');
+        const sha = core.getInput('SHA');
         const token = core.getInput('GITHUB_ACCESS_TOKEN');
         const client = github.getOctokit(token);
         core.info(`APP: ${app}`);
         core.info(`ENVIRONMENT: ${environment}`);
         core.info(`NAMESPACE: ${namespace}`);
-        core.info(`REF: ${ref}`);
-        if (app === '' && environment === '' && namespace === '' && ref === '') {
+        core.info(`sha: ${sha}`);
+        if (app === '' && environment === '' && namespace === '' && sha === '') {
             // Guess deployment based on event
             //   - if push event: on master, create single production deployment; create staging deployment for each
             //     label which doesn't have an open PR assigned.
@@ -207,7 +207,7 @@ function triggerDeployment() {
         else {
             // Create a deployment based on the arguments
             const deploymentEnviroment = new DeploymentEnvironment_1.DeploymentEnvironment(environment, namespace);
-            const deployment = yield createDeployment(client, app, deploymentEnviroment, ref);
+            const deployment = yield createDeployment(client, app, deploymentEnviroment, sha);
             return [deployment];
         }
     });
