@@ -97,8 +97,12 @@ const github = __importStar(__webpack_require__(438));
 const DeploymentEnvironment_1 = __webpack_require__(244);
 const Environment_1 = __webpack_require__(934);
 const ORGANISATION = 'switcher-ie';
+function extractEvent(context) {
+    return context.payload;
+}
 function createDeployment(client, app, environment, ref) {
     return __awaiter(this, void 0, void 0, function* () {
+        core.info(`Triggered Build: ${app} ${environment} @ ${ref}`);
         const response = yield client.repos.createDeployment({
             owner: ORGANISATION,
             repo: app,
@@ -191,23 +195,18 @@ function triggerDeployment() {
             //     label which doesn't have an open PR assigned.
             //   - if PR event: check PR for labels, create staging deployment for each match label.
             //   - else: fail step
-            let event;
             switch (github.context.eventName) {
                 case 'push':
-                    event = github.context.payload;
-                    return yield triggerDeploymentsFromPushEvent(client, event);
+                    return yield triggerDeploymentsFromPushEvent(client, extractEvent(github.context));
                 case 'pull_request':
-                    event = github.context.payload;
-                    return yield triggerDeploymentsFromPullRequestEvent(client, event);
+                    return yield triggerDeploymentsFromPullRequestEvent(client, extractEvent(github.context));
                 default:
-                    core.setFailed(`executed with unsupported event: ${github.context.eventName}`);
-                    return [];
+                    throw new Error(`executed with unsupported event: ${github.context.eventName}`);
             }
         }
         else {
             // Create a deployment based on the arguments
             const deploymentEnviroment = new DeploymentEnvironment_1.DeploymentEnvironment(environment, namespace);
-            core.info(`deployment environment: ${deploymentEnviroment.toString()}`);
             const deployment = yield createDeployment(client, app, deploymentEnviroment, ref);
             return [deployment];
         }
@@ -216,7 +215,6 @@ function triggerDeployment() {
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            core.info('running...');
             const deployments = yield triggerDeployment();
             core.setOutput('DEPLOYMENTS', JSON.stringify(deployments));
             core.setOutput('DEPLOYMENT', JSON.stringify(deployments[0]));

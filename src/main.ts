@@ -1,11 +1,13 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
+import {Context} from '@actions/github/lib/context'
 import {DeploymentEnvironment} from './DeploymentEnvironment'
 import {Environment} from './Environment'
 import {Octokit} from '@octokit/core'
 import {Endpoints} from '@octokit/types'
 import {
   Label,
+  EventPayloadMap,
   PushEvent,
   PullRequest,
   PullRequestEvent
@@ -17,12 +19,21 @@ type Deployment = CreateDeploymentResponse['data']
 
 const ORGANISATION = 'switcher-ie'
 
+function extractEvent<
+  EventName extends keyof EventPayloadMap,
+  Payload extends EventPayloadMap[EventName]
+>(context: Context): Payload {
+  return context.payload as Payload
+}
+
 async function createDeployment(
   client: Octokit,
   app: string,
   environment: DeploymentEnvironment,
   ref: string
 ): Promise<Deployment> {
+  core.info(`Triggered Build: ${app} ${environment} @ ${ref}`)
+
   const response = await client.repos.createDeployment({
     owner: ORGANISATION,
     repo: app,
@@ -157,20 +168,21 @@ async function triggerDeployment(): Promise<Deployment[]> {
     //     label which doesn't have an open PR assigned.
     //   - if PR event: check PR for labels, create staging deployment for each match label.
     //   - else: fail step
-    let event
-
     switch (github.context.eventName) {
       case 'push':
-        event = github.context.payload as PushEvent
-        return await triggerDeploymentsFromPushEvent(client, event)
+        return await triggerDeploymentsFromPushEvent(
+          client,
+          extractEvent(github.context)
+        )
       case 'pull_request':
-        event = github.context.payload as PullRequestEvent
-        return await triggerDeploymentsFromPullRequestEvent(client, event)
+        return await triggerDeploymentsFromPullRequestEvent(
+          client,
+          extractEvent(github.context)
+        )
       default:
-        core.setFailed(
+        throw new Error(
           `executed with unsupported event: ${github.context.eventName}`
         )
-        return []
     }
   } else {
     // Create a deployment based on the arguments
@@ -178,8 +190,6 @@ async function triggerDeployment(): Promise<Deployment[]> {
       environment,
       namespace
     )
-
-    core.info(`deployment environment: ${deploymentEnviroment.toString()}`)
 
     const deployment = await createDeployment(
       client,
@@ -193,7 +203,6 @@ async function triggerDeployment(): Promise<Deployment[]> {
 
 async function run(): Promise<void> {
   try {
-    core.info('running...')
     const deployments = await triggerDeployment()
     core.setOutput('DEPLOYMENTS', JSON.stringify(deployments))
     core.setOutput('DEPLOYMENT', JSON.stringify(deployments[0]))
