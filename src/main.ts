@@ -4,11 +4,18 @@ import {DeploymentEnvironment} from './DeploymentEnvironment'
 import {Environment} from './Environment'
 import {Octokit} from '@octokit/core'
 import {Endpoints} from '@octokit/types'
-import {PushEvent, PullRequestEvent} from '@octokit/webhooks-definitions/schema'
+import {
+  Label,
+  PushEvent,
+  PullRequest,
+  PullRequestEvent
+} from '@octokit/webhooks-definitions/schema'
 
 type CreateDeployment = Endpoints['POST /repos/{owner}/{repo}/deployments']
 type CreateDeploymentResponse = CreateDeployment['response']
 type Deployment = CreateDeploymentResponse['data']
+
+const ORGANISATION = 'switcher-ie'
 
 async function createDeployment(
   client: Octokit,
@@ -17,7 +24,7 @@ async function createDeployment(
   ref: string
 ): Promise<Deployment> {
   const response = await client.repos.createDeployment({
-    owner: 'switcher-ie',
+    owner: ORGANISATION,
     repo: app,
     ref,
     task: 'deploy',
@@ -29,6 +36,51 @@ async function createDeployment(
   return response.data
 }
 
+function representsStagingDeploymentEnvironment(label: Label): boolean {
+  return label.name.startsWith(`${Environment.Staging}/`)
+}
+
+async function configuredDeploymentEnvironments(
+  client: Octokit,
+  app: string
+): Promise<Set<DeploymentEnvironment>> {
+  const labels = (await client.paginate(client.issues.listLabelsForRepo, {
+    owner: ORGANISATION,
+    repo: app
+  })) as Label[]
+
+  const stagingDeploymentEnvironments = labels
+    .filter(representsStagingDeploymentEnvironment)
+    .map(label => DeploymentEnvironment.fromLabel(label))
+
+  return new Set(stagingDeploymentEnvironments)
+}
+
+async function reservedDeploymentEnvironments(
+  client: Octokit,
+  app: string
+): Promise<Set<DeploymentEnvironment>> {
+  const openPullRequests = (await client.paginate(client.pulls.list, {
+    owner: ORGANISATION,
+    repo: app,
+    state: 'open'
+  })) as PullRequest[]
+
+  return openPullRequests.reduce(
+    (memo: Set<DeploymentEnvironment>, pull_request: PullRequest) => {
+      const environments = pull_request.labels
+        .filter(representsStagingDeploymentEnvironment)
+        .map(label => DeploymentEnvironment.fromLabel(label))
+      for (const stagingDeploymentEnvironment of environments) {
+        memo.add(stagingDeploymentEnvironment)
+      }
+
+      return memo
+    },
+    new Set()
+  )
+}
+
 async function triggerDeploymentsFromPushEvent(
   client: Octokit,
   event: PushEvent
@@ -38,11 +90,27 @@ async function triggerDeploymentsFromPushEvent(
   }
 
   const app = event.repository.name
-  const environment = new DeploymentEnvironment(Environment.Production, '')
   const ref = event.after
 
-  const deployment = await createDeployment(client, app, environment, ref)
-  return [deployment]
+  const productionDeployment = await createDeployment(
+    client,
+    app,
+    new DeploymentEnvironment(Environment.Production, ''),
+    ref
+  )
+
+  const reserved = await reservedDeploymentEnvironments(client, app)
+  const needsMasterUpdate = [
+    ...(await configuredDeploymentEnvironments(client, app))
+  ].filter(environment => !reserved.has(environment))
+
+  const stagingDeployments = needsMasterUpdate.map(
+    async (deploymentEnvironment): Promise<Deployment> => {
+      return createDeployment(client, app, deploymentEnvironment, ref)
+    }
+  )
+
+  return [productionDeployment].concat(await Promise.all(stagingDeployments))
 }
 
 async function triggerDeploymentsFromPullRequestEvent(
@@ -51,13 +119,11 @@ async function triggerDeploymentsFromPullRequestEvent(
 ): Promise<Deployment[]> {
   const app = event.repository.name
 
-  const labelNames = event.pull_request.labels.map(label => label.name)
+  const labels = event.pull_request.labels
 
-  const stagingEnvironmentNames = (name: string): boolean =>
-    name.startsWith(`${Environment.Staging}/`)
-  const deployments = labelNames.filter(stagingEnvironmentNames).map(
-    async (labelName): Promise<Deployment> => {
-      const environment = DeploymentEnvironment.fromLabelName(labelName)
+  const deployments = labels.filter(representsStagingDeploymentEnvironment).map(
+    async (label): Promise<Deployment> => {
+      const environment = DeploymentEnvironment.fromLabel(label)
 
       return createDeployment(
         client,
@@ -91,7 +157,6 @@ async function triggerDeployment(): Promise<Deployment[]> {
     //     label which doesn't have an open PR assigned.
     //   - if PR event: check PR for labels, create staging deployment for each match label.
     //   - else: fail step
-
     let event
 
     switch (github.context.eventName) {

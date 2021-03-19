@@ -4,8 +4,8 @@ export class DeploymentEnvironment {
   environment: string
   namespace?: string
 
-  static fromLabelName(labelName: string): DeploymentEnvironment {
-    const [environment, namespace] = labelName.split('/')
+  static fromLabel(label: {name: string}): DeploymentEnvironment {
+    const [environment, namespace] = label.name.split('/')
     return new DeploymentEnvironment(environment, namespace)
   }
 

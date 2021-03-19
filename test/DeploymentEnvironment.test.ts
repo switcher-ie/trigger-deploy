@@ -13,7 +13,8 @@ test('instantiates with staging environment & namespace', () => {
 })
 
 test('instantiates from label name', () => {
-  const environment = DeploymentEnvironment.fromLabelName('staging/magenta')
+  const label = {name: 'staging/magenta'}
+  const environment = DeploymentEnvironment.fromLabel(label)
   expect(environment.environment).toEqual('staging')
   expect(environment.namespace).toEqual('magenta')
 })

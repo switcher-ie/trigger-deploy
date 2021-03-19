@@ -24,8 +24,8 @@ class DeploymentEnvironment {
             this.namespace = namespace;
         }
     }
-    static fromLabelName(labelName) {
-        const [environment, namespace] = labelName.split('/');
+    static fromLabel(label) {
+        const [environment, namespace] = label.name.split('/');
         return new DeploymentEnvironment(environment, namespace);
     }
     toString() {
@@ -96,18 +96,52 @@ const core = __importStar(__webpack_require__(186));
 const github = __importStar(__webpack_require__(438));
 const DeploymentEnvironment_1 = __webpack_require__(244);
 const Environment_1 = __webpack_require__(934);
+const ORGANISATION = 'switcher-ie';
 function createDeployment(client, app, environment, ref) {
     return __awaiter(this, void 0, void 0, function* () {
         const response = yield client.repos.createDeployment({
-            owner: 'switcher-ie',
+            owner: ORGANISATION,
             repo: app,
             ref,
             task: 'deploy',
             auto_merge: false,
             environment: environment.toString(),
-            required_contexts: [],
+            required_contexts: []
         });
         return response.data;
+    });
+}
+function representsStagingDeploymentEnvironment(label) {
+    return label.name.startsWith(`${Environment_1.Environment.Staging}/`);
+}
+function configuredDeploymentEnvironments(client, app) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const labels = (yield client.paginate(client.issues.listLabelsForRepo, {
+            owner: ORGANISATION,
+            repo: app
+        }));
+        const stagingDeploymentEnvironments = labels
+            .filter(representsStagingDeploymentEnvironment)
+            .map(label => DeploymentEnvironment_1.DeploymentEnvironment.fromLabel(label));
+        return new Set(stagingDeploymentEnvironments);
+    });
+}
+function reservedDeploymentEnvironments(client, app) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const openPullRequests = (yield client.paginate(client.pulls.list, {
+            owner: ORGANISATION,
+            repo: app,
+            state: 'open'
+        }));
+        return openPullRequests.reduce((memo, pull_request) => {
+            const environments = pull_request.labels
+                .filter(representsStagingDeploymentEnvironment)
+                .map(label => DeploymentEnvironment_1.DeploymentEnvironment.fromLabel(label));
+            for (const stagingDeploymentEnvironment of environments) {
+                memo.add(stagingDeploymentEnvironment);
+            }
+            return memo;
+        }, new Set());
     });
 }
 function triggerDeploymentsFromPushEvent(client, event) {
@@ -116,19 +150,24 @@ function triggerDeploymentsFromPushEvent(client, event) {
             return [];
         }
         const app = event.repository.name;
-        const environment = new DeploymentEnvironment_1.DeploymentEnvironment(Environment_1.Environment.Production, '');
         const ref = event.after;
-        const deployment = yield createDeployment(client, app, environment, ref);
-        return [deployment];
+        const productionDeployment = yield createDeployment(client, app, new DeploymentEnvironment_1.DeploymentEnvironment(Environment_1.Environment.Production, ''), ref);
+        const reserved = yield reservedDeploymentEnvironments(client, app);
+        const needsMasterUpdate = [
+            ...(yield configuredDeploymentEnvironments(client, app))
+        ].filter(environment => !reserved.has(environment));
+        const stagingDeployments = needsMasterUpdate.map((deploymentEnvironment) => __awaiter(this, void 0, void 0, function* () {
+            return createDeployment(client, app, deploymentEnvironment, ref);
+        }));
+        return [productionDeployment].concat(yield Promise.all(stagingDeployments));
     });
 }
 function triggerDeploymentsFromPullRequestEvent(client, event) {
     return __awaiter(this, void 0, void 0, function* () {
         const app = event.repository.name;
-        const labelNames = event.pull_request.labels.map(label => label.name);
-        const stagingEnvironmentNames = (name) => name.startsWith(`${Environment_1.Environment.Staging}/`);
-        const deployments = labelNames.filter(stagingEnvironmentNames).map((labelName) => __awaiter(this, void 0, void 0, function* () {
-            const environment = DeploymentEnvironment_1.DeploymentEnvironment.fromLabelName(labelName);
+        const labels = event.pull_request.labels;
+        const deployments = labels.filter(representsStagingDeploymentEnvironment).map((label) => __awaiter(this, void 0, void 0, function* () {
+            const environment = DeploymentEnvironment_1.DeploymentEnvironment.fromLabel(label);
             return createDeployment(client, app, environment, event.pull_request.head.sha);
         }));
         return Promise.all(deployments);
