@@ -164,10 +164,9 @@ function triggerDeploymentsFromPushEvent(client, event) {
         const app = event.repository.name;
         const sha = event.after;
         const productionDeployment = yield createDeployment(client, app, new DeploymentEnvironment_1.DeploymentEnvironment(Environment_1.Environment.Production, ''), sha);
-        const reserved = yield reservedDeploymentEnvironments(client, app);
-        const needsMasterUpdate = [
-            ...(yield configuredDeploymentEnvironments(client, app))
-        ].filter(environment => !reserved.has(environment));
+        const configured = [...yield configuredDeploymentEnvironments(client, app)];
+        const reserved = [...yield reservedDeploymentEnvironments(client, app)].map((e) => e.toString());
+        const needsMasterUpdate = configured.filter(environment => !reserved.includes(environment.toString()));
         const stagingDeployments = needsMasterUpdate.map((deploymentEnvironment) => __awaiter(this, void 0, void 0, function* () {
             return createDeployment(client, app, deploymentEnvironment, sha);
         }));

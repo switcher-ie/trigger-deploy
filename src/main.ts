@@ -110,10 +110,14 @@ async function triggerDeploymentsFromPushEvent(
     sha
   )
 
-  const reserved = await reservedDeploymentEnvironments(client, app)
-  const needsMasterUpdate = [
-    ...(await configuredDeploymentEnvironments(client, app))
-  ].filter(environment => !reserved.has(environment))
+  const configured = [...(await configuredDeploymentEnvironments(client, app))]
+  const reserved = [
+    ...(await reservedDeploymentEnvironments(client, app))
+  ].map(e => e.toString())
+
+  const needsMasterUpdate = configured.filter(
+    environment => !reserved.includes(environment.toString())
+  )
 
   const stagingDeployments = needsMasterUpdate.map(
     async (deploymentEnvironment): Promise<Deployment> => {
