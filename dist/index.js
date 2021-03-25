@@ -12,12 +12,11 @@ exports.DeploymentEnvironment = void 0;
 const Environment_1 = __webpack_require__(934);
 class DeploymentEnvironment {
     constructor(environment, namespace) {
-        if (environment !== Environment_1.Environment.Staging &&
-            environment !== Environment_1.Environment.Production) {
+        if (!Environment_1.EnvironmentIsValid(environment)) {
             throw new Error(`invalid environment: '${environment}'`);
         }
         this.environment = environment;
-        if (environment !== Environment_1.Environment.Production) {
+        if (Environment_1.EnvironmentHasMultipleNamespaces(environment)) {
             if (namespace === '') {
                 throw new Error(`invalid namespace: '${namespace}'`);
             }
@@ -29,11 +28,11 @@ class DeploymentEnvironment {
         return new DeploymentEnvironment(environment, namespace);
     }
     toString() {
-        if (this.environment === Environment_1.Environment.Production) {
-            return this.environment;
+        if (Environment_1.EnvironmentHasMultipleNamespaces(this.environment)) {
+            return `${this.environment}/${this.namespace}`;
         }
         else {
-            return `${this.environment}/${this.namespace}`;
+            return this.environment;
         }
     }
 }
@@ -48,12 +47,21 @@ exports.DeploymentEnvironment = DeploymentEnvironment;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.Environment = void 0;
+exports.EnvironmentHasMultipleNamespaces = exports.EnvironmentIsValid = exports.Environment = void 0;
 var Environment;
 (function (Environment) {
+    Environment["Admin"] = "admin";
     Environment["Staging"] = "staging";
     Environment["Production"] = "production";
 })(Environment = exports.Environment || (exports.Environment = {}));
+function EnvironmentIsValid(value) {
+    return Object.values(Environment).includes(value);
+}
+exports.EnvironmentIsValid = EnvironmentIsValid;
+function EnvironmentHasMultipleNamespaces(environment) {
+    return environment === Environment.Staging;
+}
+exports.EnvironmentHasMultipleNamespaces = EnvironmentHasMultipleNamespaces;
 
 
 /***/ }),

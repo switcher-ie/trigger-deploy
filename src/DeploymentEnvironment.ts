@@ -1,4 +1,7 @@
-import {Environment} from './Environment'
+import {
+  EnvironmentIsValid,
+  EnvironmentHasMultipleNamespaces
+} from './Environment'
 
 export class DeploymentEnvironment {
   environment: string
@@ -10,16 +13,13 @@ export class DeploymentEnvironment {
   }
 
   constructor(environment: string, namespace: string) {
-    if (
-      environment !== Environment.Staging &&
-      environment !== Environment.Production
-    ) {
+    if (!EnvironmentIsValid(environment)) {
       throw new Error(`invalid environment: '${environment}'`)
     }
 
     this.environment = environment
 
-    if (environment !== Environment.Production) {
+    if (EnvironmentHasMultipleNamespaces(environment)) {
       if (namespace === '') {
         throw new Error(`invalid namespace: '${namespace}'`)
       }
@@ -29,10 +29,10 @@ export class DeploymentEnvironment {
   }
 
   toString(): string {
-    if (this.environment === Environment.Production) {
-      return this.environment
-    } else {
+    if (EnvironmentHasMultipleNamespaces(this.environment)) {
       return `${this.environment}/${this.namespace}`
+    } else {
+      return this.environment
     }
   }
 }
