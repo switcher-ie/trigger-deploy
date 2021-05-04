@@ -164,8 +164,10 @@ function triggerDeploymentsFromPushEvent(client, event) {
         const app = event.repository.name;
         const sha = event.after;
         const productionDeployment = yield createDeployment(client, app, new DeploymentEnvironment_1.DeploymentEnvironment(Environment_1.Environment.Production, ''), sha);
-        const configured = [...yield configuredDeploymentEnvironments(client, app)];
-        const reserved = [...yield reservedDeploymentEnvironments(client, app)].map((e) => e.toString());
+        const configured = [...(yield configuredDeploymentEnvironments(client, app))];
+        const reserved = [
+            ...(yield reservedDeploymentEnvironments(client, app))
+        ].map(e => e.toString());
         const needsMasterUpdate = configured.filter(environment => !reserved.includes(environment.toString()));
         const stagingDeployments = needsMasterUpdate.map((deploymentEnvironment) => __awaiter(this, void 0, void 0, function* () {
             return createDeployment(client, app, deploymentEnvironment, sha);
@@ -1555,7 +1557,7 @@ function _objectWithoutProperties(source, excluded) {
   return target;
 }
 
-const VERSION = "3.2.5";
+const VERSION = "3.3.1";
 
 class Octokit {
   constructor(options = {}) {
@@ -1564,6 +1566,7 @@ class Octokit {
       baseUrl: request.request.endpoint.DEFAULTS.baseUrl,
       headers: {},
       request: Object.assign({}, options.request, {
+        // @ts-ignore internal usage only, no need to type
         hook: hook.bind(null, "request")
       }),
       mediaType: {
