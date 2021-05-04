@@ -1,9 +1,10 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {WebhookPayload} from '@actions/github/lib/interfaces'
+import {GitHub} from '@actions/github/lib/utils'
 import {DeploymentEnvironment} from './DeploymentEnvironment'
 import {Environment} from './Environment'
-import {Octokit} from '@octokit/core'
+
 import {Endpoints} from '@octokit/types'
 import {
   Label,
@@ -11,11 +12,13 @@ import {
   PushEvent,
   PullRequest,
   PullRequestEvent
-} from '@octokit/webhooks-definitions/schema'
+} from '@octokit/webhooks-types'
 
 type CreateDeployment = Endpoints['POST /repos/{owner}/{repo}/deployments']
 type CreateDeploymentResponse = CreateDeployment['response']
 type Deployment = CreateDeploymentResponse['data']
+
+type GitHubClient = InstanceType<typeof GitHub>
 
 const ORGANISATION = 'switcher-ie'
 
@@ -27,7 +30,7 @@ function extractEvent<
 }
 
 async function createDeployment(
-  client: Octokit,
+  client: GitHubClient,
   app: string,
   environment: DeploymentEnvironment,
   sha: string
@@ -52,7 +55,7 @@ function representsStagingDeploymentEnvironment(label: Label): boolean {
 }
 
 async function configuredDeploymentEnvironments(
-  client: Octokit,
+  client: GitHubClient,
   app: string
 ): Promise<Set<DeploymentEnvironment>> {
   const labels = (await client.paginate(client.issues.listLabelsForRepo, {
@@ -68,7 +71,7 @@ async function configuredDeploymentEnvironments(
 }
 
 async function reservedDeploymentEnvironments(
-  client: Octokit,
+  client: GitHubClient,
   app: string
 ): Promise<Set<DeploymentEnvironment>> {
   const openPullRequests = (await client.paginate(client.pulls.list, {
@@ -93,7 +96,7 @@ async function reservedDeploymentEnvironments(
 }
 
 async function triggerDeploymentsFromPushEvent(
-  client: Octokit,
+  client: GitHubClient,
   event: PushEvent
 ): Promise<Deployment[]> {
   if (event.ref !== 'refs/heads/master') {
@@ -129,7 +132,7 @@ async function triggerDeploymentsFromPushEvent(
 }
 
 async function triggerDeploymentsFromPullRequestEvent(
-  client: Octokit,
+  client: GitHubClient,
   event: PullRequestEvent
 ): Promise<Deployment[]> {
   const app = event.repository.name
@@ -159,7 +162,7 @@ async function triggerDeployment(): Promise<Deployment[]> {
   const sha = core.getInput('SHA')
 
   const token = core.getInput('GITHUB_ACCESS_TOKEN')
-  const client = github.getOctokit(token)
+  const client: GitHubClient = github.getOctokit(token)
 
   core.info(`APP: ${app}`)
   core.info(`ENVIRONMENT: ${environment}`)
