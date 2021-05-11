@@ -209,6 +209,8 @@ function triggerDeployment() {
                     return yield triggerDeploymentsFromPushEvent(client, extractEvent(github.context.eventName, github.context.payload));
                 case 'pull_request':
                     return yield triggerDeploymentsFromPullRequestEvent(client, extractEvent(github.context.eventName, github.context.payload));
+                case 'pull_request_target':
+                    return yield triggerDeploymentsFromPullRequestEvent(client, github.context.payload);
                 default:
                     throw new Error(`executed with unsupported event: ${github.context.eventName}`);
             }

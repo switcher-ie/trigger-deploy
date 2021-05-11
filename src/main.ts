@@ -187,6 +187,11 @@ async function triggerDeployment(): Promise<Deployment[]> {
           client,
           extractEvent(github.context.eventName, github.context.payload)
         )
+      case 'pull_request_target':
+        return await triggerDeploymentsFromPullRequestEvent(
+          client,
+          github.context.payload as PullRequestEvent
+        )
       default:
         throw new Error(
           `executed with unsupported event: ${github.context.eventName}`
