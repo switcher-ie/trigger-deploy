@@ -1,5 +1,6 @@
 export enum Environment {
   Admin = 'admin',
+  Redirects = 'redirects',
   Staging = 'staging',
   Production = 'production'
 }

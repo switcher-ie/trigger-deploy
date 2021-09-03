@@ -51,6 +51,7 @@ exports.EnvironmentHasMultipleNamespaces = exports.EnvironmentIsValid = exports.
 var Environment;
 (function (Environment) {
     Environment["Admin"] = "admin";
+    Environment["Redirects"] = "redirects";
     Environment["Staging"] = "staging";
     Environment["Production"] = "production";
 })(Environment = exports.Environment || (exports.Environment = {}));
