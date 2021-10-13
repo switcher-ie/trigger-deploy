@@ -35,7 +35,7 @@ async function createDeployment(
   environment: DeploymentEnvironment,
   sha: string
 ): Promise<Deployment> {
-  core.info(`Triggered Build: ${app} ${environment} @ ${sha}`)
+  core.info(`Triggered Deployment: ${app} ${environment} @ ${sha}`)
 
   const response = await client.repos.createDeployment({
     owner: ORGANISATION,
