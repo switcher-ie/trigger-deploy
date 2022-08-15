@@ -35,7 +35,7 @@ async function createDeployment(
   environment: DeploymentEnvironment,
   sha: string
 ): Promise<Deployment> {
-  core.info(`Triggered Build: ${app} ${environment} @ ${sha}`)
+  core.info(`Triggered Deployment: ${app} ${environment} @ ${sha}`)
 
   const response = await client.repos.createDeployment({
     owner: ORGANISATION,
@@ -99,7 +99,7 @@ async function triggerDeploymentsFromPushEvent(
   client: GitHubClient,
   event: PushEvent
 ): Promise<Deployment[]> {
-  if (event.ref !== 'refs/heads/master') {
+  if (event.ref !== 'refs/heads/master' && event.ref !== 'refs/heads/main') {
     return []
   }
 
@@ -171,7 +171,7 @@ async function triggerDeployment(): Promise<Deployment[]> {
 
   if (app === '' && environment === '' && namespace === '' && sha === '') {
     // Guess deployment based on event
-    //   - if push event: on master, create single production deployment; create staging deployment for each
+    //   - if push event: on master or main, create single production deployment; create staging deployment for each
     //     label which doesn't have an open PR assigned.
     //   - if PR event: check PR for labels, create staging deployment for each match label.
     //   - else: fail step

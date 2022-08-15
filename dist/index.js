@@ -111,7 +111,7 @@ function extractEvent(eventName, payload) {
 }
 function createDeployment(client, app, environment, sha) {
     return __awaiter(this, void 0, void 0, function* () {
-        core.info(`Triggered Build: ${app} ${environment} @ ${sha}`);
+        core.info(`Triggered Deployment: ${app} ${environment} @ ${sha}`);
         const response = yield client.repos.createDeployment({
             owner: ORGANISATION,
             repo: app,
@@ -159,7 +159,7 @@ function reservedDeploymentEnvironments(client, app) {
 }
 function triggerDeploymentsFromPushEvent(client, event) {
     return __awaiter(this, void 0, void 0, function* () {
-        if (event.ref !== 'refs/heads/master') {
+        if (event.ref !== 'refs/heads/master' && event.ref !== 'refs/heads/main') {
             return [];
         }
         const app = event.repository.name;
@@ -201,7 +201,7 @@ function triggerDeployment() {
         core.info(`sha: ${sha}`);
         if (app === '' && environment === '' && namespace === '' && sha === '') {
             // Guess deployment based on event
-            //   - if push event: on master, create single production deployment; create staging deployment for each
+            //   - if push event: on master or main, create single production deployment; create staging deployment for each
             //     label which doesn't have an open PR assigned.
             //   - if PR event: check PR for labels, create staging deployment for each match label.
             //   - else: fail step
