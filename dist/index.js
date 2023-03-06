@@ -165,9 +165,7 @@ function triggerDeploymentsFromPushEvent(client, event) {
         const sha = event.after;
         const productionDeployment = yield createDeployment(client, app, new DeploymentEnvironment_1.DeploymentEnvironment(Environment_1.Environment.Production, ''), sha);
         const configured = [...(yield configuredDeploymentEnvironments(client, app))];
-        const reserved = [
-            ...(yield reservedDeploymentEnvironments(client, app))
-        ].map(e => e.toString());
+        const reserved = [...(yield reservedDeploymentEnvironments(client, app))].map(e => e.toString());
         const needsMasterUpdate = configured.filter(environment => !reserved.includes(environment.toString()));
         const stagingDeployments = needsMasterUpdate.map((deploymentEnvironment) => __awaiter(this, void 0, void 0, function* () {
             return createDeployment(client, app, deploymentEnvironment, sha);
@@ -179,7 +177,9 @@ function triggerDeploymentsFromPullRequestEvent(client, event) {
     return __awaiter(this, void 0, void 0, function* () {
         const app = event.repository.name;
         const labels = event.pull_request.labels;
-        const deployments = labels.filter(representsStagingDeploymentEnvironment).map((label) => __awaiter(this, void 0, void 0, function* () {
+        const deployments = labels
+            .filter(representsStagingDeploymentEnvironment)
+            .map((label) => __awaiter(this, void 0, void 0, function* () {
             const environment = DeploymentEnvironment_1.DeploymentEnvironment.fromLabel(label);
             return createDeployment(client, app, environment, event.pull_request.head.sha);
         }));
