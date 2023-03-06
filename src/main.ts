@@ -37,7 +37,7 @@ async function createDeployment(
 ): Promise<Deployment> {
   core.info(`Triggered Deployment: ${app} ${environment} @ ${sha}`)
 
-  const response = await client.repos.createDeployment({
+  const response = await client.rest.repos.createDeployment({
     owner: ORGANISATION,
     repo: app,
     ref: sha,
@@ -58,7 +58,7 @@ async function configuredDeploymentEnvironments(
   client: GitHubClient,
   app: string
 ): Promise<Set<DeploymentEnvironment>> {
-  const labels = (await client.paginate(client.issues.listLabelsForRepo, {
+  const labels = (await client.paginate(client.rest.issues.listLabelsForRepo, {
     owner: ORGANISATION,
     repo: app
   })) as Label[]
@@ -74,7 +74,7 @@ async function reservedDeploymentEnvironments(
   client: GitHubClient,
   app: string
 ): Promise<Set<DeploymentEnvironment>> {
-  const openPullRequests = (await client.paginate(client.pulls.list, {
+  const openPullRequests = (await client.paginate(client.rest.pulls.list, {
     owner: ORGANISATION,
     repo: app,
     state: 'open'
@@ -114,9 +114,9 @@ async function triggerDeploymentsFromPushEvent(
   )
 
   const configured = [...(await configuredDeploymentEnvironments(client, app))]
-  const reserved = [
-    ...(await reservedDeploymentEnvironments(client, app))
-  ].map(e => e.toString())
+  const reserved = [...(await reservedDeploymentEnvironments(client, app))].map(
+    e => e.toString()
+  )
 
   const needsMasterUpdate = configured.filter(
     environment => !reserved.includes(environment.toString())
@@ -139,8 +139,9 @@ async function triggerDeploymentsFromPullRequestEvent(
 
   const labels = event.pull_request.labels
 
-  const deployments = labels.filter(representsStagingDeploymentEnvironment).map(
-    async (label): Promise<Deployment> => {
+  const deployments = labels
+    .filter(representsStagingDeploymentEnvironment)
+    .map(async (label): Promise<Deployment> => {
       const environment = DeploymentEnvironment.fromLabel(label)
 
       return createDeployment(
@@ -149,8 +150,7 @@ async function triggerDeploymentsFromPullRequestEvent(
         environment,
         event.pull_request.head.sha
       )
-    }
-  )
+    })
 
   return Promise.all(deployments)
 }
