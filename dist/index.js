@@ -108,7 +108,7 @@ const ORGANISATION = 'switcher-ie';
 function extractEvent(eventName, payload) {
     return payload;
 }
-function createDeployment(client, app, environment, sha) {
+function createDeployment(client, app, environment, sha, pullRequestURL = undefined) {
     return __awaiter(this, void 0, void 0, function* () {
         core.info(`Triggered Deployment: ${app} ${environment} @ ${sha}`);
         const response = yield client.rest.repos.createDeployment({
@@ -118,7 +118,10 @@ function createDeployment(client, app, environment, sha) {
             task: 'deploy',
             auto_merge: false,
             environment: environment.toString(),
-            required_contexts: []
+            required_contexts: [],
+            payload: {
+                pullRequestURL
+            }
         });
         return response.data;
     });
@@ -177,11 +180,12 @@ function triggerDeploymentsFromPullRequestEvent(client, event) {
     return __awaiter(this, void 0, void 0, function* () {
         const app = event.repository.name;
         const labels = event.pull_request.labels;
+        const url = event.pull_request.url;
         const deployments = labels
             .filter(representsStagingDeploymentEnvironment)
             .map((label) => __awaiter(this, void 0, void 0, function* () {
             const environment = DeploymentEnvironment_1.DeploymentEnvironment.fromLabel(label);
-            return createDeployment(client, app, environment, event.pull_request.head.sha);
+            return createDeployment(client, app, environment, event.pull_request.head.sha, url);
         }));
         return Promise.all(deployments);
     });

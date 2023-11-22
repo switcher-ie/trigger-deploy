@@ -33,7 +33,8 @@ async function createDeployment(
   client: GitHubClient,
   app: string,
   environment: DeploymentEnvironment,
-  sha: string
+  sha: string,
+  pullRequestURL: string | undefined = undefined
 ): Promise<Deployment> {
   core.info(`Triggered Deployment: ${app} ${environment} @ ${sha}`)
 
@@ -44,7 +45,10 @@ async function createDeployment(
     task: 'deploy',
     auto_merge: false,
     environment: environment.toString(),
-    required_contexts: []
+    required_contexts: [],
+    payload: {
+      pullRequestURL
+    }
   })
 
   return response.data
@@ -138,6 +142,7 @@ async function triggerDeploymentsFromPullRequestEvent(
   const app = event.repository.name
 
   const labels = event.pull_request.labels
+  const url = event.pull_request.url
 
   const deployments = labels
     .filter(representsStagingDeploymentEnvironment)
@@ -148,7 +153,8 @@ async function triggerDeploymentsFromPullRequestEvent(
         client,
         app,
         environment,
-        event.pull_request.head.sha
+        event.pull_request.head.sha,
+        url
       )
     })
 
