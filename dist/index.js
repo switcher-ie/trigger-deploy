@@ -120,7 +120,7 @@ function createDeployment(client, app, environment, sha, pullRequestURL = undefi
             environment: environment.toString(),
             required_contexts: [],
             payload: {
-                pullRequestURL
+                "pull_request_url": pullRequestURL
             }
         });
         return response.data;

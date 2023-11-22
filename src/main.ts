@@ -47,7 +47,7 @@ async function createDeployment(
     environment: environment.toString(),
     required_contexts: [],
     payload: {
-      pullRequestURL
+      pull_request_url: pullRequestURL
     }
   })
 
