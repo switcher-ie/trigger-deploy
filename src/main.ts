@@ -142,7 +142,7 @@ async function triggerDeploymentsFromPullRequestEvent(
   const app = event.repository.name
 
   const labels = event.pull_request.labels
-  const url = event.pull_request.url
+  const url = event.pull_request.html_url
 
   const deployments = labels
     .filter(representsStagingDeploymentEnvironment)

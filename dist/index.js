@@ -120,7 +120,7 @@ function createDeployment(client, app, environment, sha, pullRequestURL = undefi
             environment: environment.toString(),
             required_contexts: [],
             payload: {
-                "pull_request_url": pullRequestURL
+                pull_request_url: pullRequestURL
             }
         });
         return response.data;
@@ -180,7 +180,7 @@ function triggerDeploymentsFromPullRequestEvent(client, event) {
     return __awaiter(this, void 0, void 0, function* () {
         const app = event.repository.name;
         const labels = event.pull_request.labels;
-        const url = event.pull_request.url;
+        const url = event.pull_request.html_url;
         const deployments = labels
             .filter(representsStagingDeploymentEnvironment)
             .map((label) => __awaiter(this, void 0, void 0, function* () {
