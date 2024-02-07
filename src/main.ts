@@ -226,7 +226,11 @@ async function run(): Promise<void> {
     core.setOutput('DEPLOYMENTS', JSON.stringify(deployments))
     core.setOutput('DEPLOYMENT', JSON.stringify(deployments[0]))
   } catch (error) {
-    core.setFailed(error.message)
+    if (typeof error === 'string' || error instanceof Error) {
+      core.setFailed(error)
+    } else {
+      process.exitCode = core.ExitCode.Failure
+    }
   }
 }
 

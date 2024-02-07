@@ -11,11 +11,11 @@ exports.DeploymentEnvironment = void 0;
 const Environment_1 = __nccwpck_require__(8934);
 class DeploymentEnvironment {
     constructor(environment, namespace) {
-        if (!Environment_1.EnvironmentIsValid(environment)) {
+        if (!(0, Environment_1.EnvironmentIsValid)(environment)) {
             throw new Error(`invalid environment: '${environment}'`);
         }
         this.environment = environment;
-        if (Environment_1.EnvironmentHasMultipleNamespaces(environment)) {
+        if ((0, Environment_1.EnvironmentHasMultipleNamespaces)(environment)) {
             if (namespace === '') {
                 throw new Error(`invalid namespace: '${namespace}'`);
             }
@@ -27,7 +27,7 @@ class DeploymentEnvironment {
         return new DeploymentEnvironment(environment, namespace);
     }
     toString() {
-        if (Environment_1.EnvironmentHasMultipleNamespaces(this.environment)) {
+        if ((0, Environment_1.EnvironmentHasMultipleNamespaces)(this.environment)) {
             return `${this.environment}/${this.namespace}`;
         }
         else {
@@ -235,7 +235,12 @@ function run() {
             core.setOutput('DEPLOYMENT', JSON.stringify(deployments[0]));
         }
         catch (error) {
-            core.setFailed(error.message);
+            if (typeof error === 'string' || error instanceof Error) {
+                core.setFailed(error);
+            }
+            else {
+                process.exitCode = core.ExitCode.Failure;
+            }
         }
     });
 }
