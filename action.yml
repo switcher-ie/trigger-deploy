@@ -19,5 +19,5 @@ outputs:
   deployments:
     description: 'JSON-encoded array of GitHub deployments'
 runs:
-  using: 'node16'
+  using: 'node20'
   main: 'dist/index.js'
