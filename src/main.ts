@@ -2,8 +2,8 @@ import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {WebhookPayload} from '@actions/github/lib/interfaces'
 import {GitHub} from '@actions/github/lib/utils'
-import {DeploymentEnvironment} from './DeploymentEnvironment'
-import {Environment} from './Environment'
+import {DeploymentEnvironment} from './deployment_environment'
+import {Environment} from './environment'
 
 import {Endpoints} from '@octokit/types'
 import {

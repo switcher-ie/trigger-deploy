@@ -1,7 +1,7 @@
 import {
   EnvironmentIsValid,
   EnvironmentHasMultipleNamespaces
-} from './Environment'
+} from './environment'
 
 export class DeploymentEnvironment {
   environment: string

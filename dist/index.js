@@ -1,25 +1,25 @@
 require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 244:
+/***/ 8942:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.DeploymentEnvironment = void 0;
-const Environment_1 = __nccwpck_require__(8934);
+const environment_1 = __nccwpck_require__(3309);
 class DeploymentEnvironment {
     static fromLabel(label) {
         const [environment, namespace] = label.name.split('/');
         return new DeploymentEnvironment(environment, namespace);
     }
     constructor(environment, namespace) {
-        if (!(0, Environment_1.EnvironmentIsValid)(environment)) {
+        if (!(0, environment_1.EnvironmentIsValid)(environment)) {
             throw new Error(`invalid environment: '${environment}'`);
         }
         this.environment = environment;
-        if ((0, Environment_1.EnvironmentHasMultipleNamespaces)(environment)) {
+        if ((0, environment_1.EnvironmentHasMultipleNamespaces)(environment)) {
             if (namespace === '') {
                 throw new Error(`invalid namespace: '${namespace}'`);
             }
@@ -27,7 +27,7 @@ class DeploymentEnvironment {
         }
     }
     toString() {
-        if ((0, Environment_1.EnvironmentHasMultipleNamespaces)(this.environment)) {
+        if ((0, environment_1.EnvironmentHasMultipleNamespaces)(this.environment)) {
             return `${this.environment}/${this.namespace}`;
         }
         else {
@@ -40,7 +40,7 @@ exports.DeploymentEnvironment = DeploymentEnvironment;
 
 /***/ }),
 
-/***/ 8934:
+/***/ 3309:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
@@ -106,8 +106,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
-const DeploymentEnvironment_1 = __nccwpck_require__(244);
-const Environment_1 = __nccwpck_require__(8934);
+const deployment_environment_1 = __nccwpck_require__(8942);
+const environment_1 = __nccwpck_require__(3309);
 const ORGANISATION = 'switcher-ie';
 function extractEvent(eventName, payload) {
     return payload;
@@ -131,7 +131,7 @@ function createDeployment(client, app, environment, sha, pullRequestURL = undefi
     });
 }
 function representsStagingDeploymentEnvironment(label) {
-    return label.name.startsWith(`${Environment_1.Environment.Staging}/`);
+    return label.name.startsWith(`${environment_1.Environment.Staging}/`);
 }
 function configuredDeploymentEnvironments(client, app) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -141,7 +141,7 @@ function configuredDeploymentEnvironments(client, app) {
         }));
         const stagingDeploymentEnvironments = labels
             .filter(representsStagingDeploymentEnvironment)
-            .map(label => DeploymentEnvironment_1.DeploymentEnvironment.fromLabel(label));
+            .map(label => deployment_environment_1.DeploymentEnvironment.fromLabel(label));
         return new Set(stagingDeploymentEnvironments);
     });
 }
@@ -155,7 +155,7 @@ function reservedDeploymentEnvironments(client, app) {
         return openPullRequests.reduce((memo, pull_request) => {
             const environments = pull_request.labels
                 .filter(representsStagingDeploymentEnvironment)
-                .map(label => DeploymentEnvironment_1.DeploymentEnvironment.fromLabel(label));
+                .map(label => deployment_environment_1.DeploymentEnvironment.fromLabel(label));
             for (const stagingDeploymentEnvironment of environments) {
                 memo.add(stagingDeploymentEnvironment);
             }
@@ -170,7 +170,7 @@ function triggerDeploymentsFromPushEvent(client, event) {
         }
         const app = event.repository.name;
         const sha = event.after;
-        const productionDeployment = yield createDeployment(client, app, new DeploymentEnvironment_1.DeploymentEnvironment(Environment_1.Environment.Production, ''), sha);
+        const productionDeployment = yield createDeployment(client, app, new deployment_environment_1.DeploymentEnvironment(environment_1.Environment.Production, ''), sha);
         const configured = [...(yield configuredDeploymentEnvironments(client, app))];
         const reserved = [...(yield reservedDeploymentEnvironments(client, app))].map(e => e.toString());
         const needsMasterUpdate = configured.filter(environment => !reserved.includes(environment.toString()));
@@ -188,7 +188,7 @@ function triggerDeploymentsFromPullRequestEvent(client, event) {
         const deployments = labels
             .filter(representsStagingDeploymentEnvironment)
             .map((label) => __awaiter(this, void 0, void 0, function* () {
-            const environment = DeploymentEnvironment_1.DeploymentEnvironment.fromLabel(label);
+            const environment = deployment_environment_1.DeploymentEnvironment.fromLabel(label);
             return createDeployment(client, app, environment, event.pull_request.head.sha, url);
         }));
         return Promise.all(deployments);
@@ -225,7 +225,7 @@ function triggerDeployment() {
         }
         else {
             // Create a deployment based on the arguments
-            const deploymentEnviroment = new DeploymentEnvironment_1.DeploymentEnvironment(environment, namespace);
+            const deploymentEnviroment = new deployment_environment_1.DeploymentEnvironment(environment, namespace);
             const deployment = yield createDeployment(client, app, deploymentEnviroment, sha);
             return [deployment];
         }
