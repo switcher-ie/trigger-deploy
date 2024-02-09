@@ -2,8 +2,8 @@ import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {WebhookPayload} from '@actions/github/lib/interfaces'
 import {GitHub} from '@actions/github/lib/utils'
-import {DeploymentEnvironment} from './DeploymentEnvironment'
-import {Environment} from './Environment'
+import {DeploymentEnvironment} from './deployment_environment'
+import {Environment} from './environment'
 
 import {Endpoints} from '@octokit/types'
 import {
@@ -226,7 +226,11 @@ async function run(): Promise<void> {
     core.setOutput('DEPLOYMENTS', JSON.stringify(deployments))
     core.setOutput('DEPLOYMENT', JSON.stringify(deployments[0]))
   } catch (error) {
-    core.setFailed(error.message)
+    if (typeof error === 'string' || error instanceof Error) {
+      core.setFailed(error)
+    } else {
+      process.exitCode = core.ExitCode.Failure
+    }
   }
 }
 
